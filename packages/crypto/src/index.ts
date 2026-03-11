@@ -10,12 +10,25 @@ import { resolveTxt } from "node:dns/promises";
 
 const DNS_RECORD_PREFIX = "kyuix-idp=v1";
 const DNS_ALGORITHM_VALUE = "Ed25519";
+const DNS_OVER_HTTPS_ENDPOINT =
+  "https://dns.google/resolve?type=TXT&name=";
 
 export interface ProviderDnsRecord {
   recordName: string;
   algorithm: string;
   publicKeyBase64Url: string;
   rawRecord: string;
+  source?: "system-dns" | "dns-over-https";
+}
+
+interface GoogleDnsAnswer {
+  data?: string;
+  type?: number;
+}
+
+interface GoogleDnsResponse {
+  Answer?: GoogleDnsAnswer[];
+  Status?: number;
 }
 
 function toCanonicalBuffer(value: object): Buffer {
@@ -78,23 +91,80 @@ export function parseDnsTxtRecord(recordName: string, rawRecord: string): Provid
   };
 }
 
-export async function resolveProviderDnsRecord(
-  providerDomain: string,
+async function resolveProviderDnsRecordViaHttps(
+  recordName: string,
 ): Promise<ProviderDnsRecord> {
-  const recordName = getDnsRecordName(providerDomain);
-  const records = await resolveTxt(recordName);
+  const response = await fetch(
+    `${DNS_OVER_HTTPS_ENDPOINT}${encodeURIComponent(recordName)}`,
+    {
+      headers: {
+        accept: "application/json",
+      },
+      cache: "no-store",
+    },
+  );
 
-  for (const recordChunks of records) {
-    const rawRecord = recordChunks.join("");
+  if (!response.ok) {
+    throw new Error(
+      `DNS-over-HTTPS lookup failed with status ${response.status} ${response.statusText}.`,
+    );
+  }
+
+  const payload = (await response.json()) as GoogleDnsResponse;
+
+  if (payload.Status !== 0 || !payload.Answer?.length) {
+    throw new Error(`DNS-over-HTTPS did not return a TXT answer for ${recordName}.`);
+  }
+
+  for (const answer of payload.Answer) {
+    if (answer.type !== 16 || !answer.data) {
+      continue;
+    }
+
+    const rawRecord = answer.data.replace(/^"|"$/g, "").replace(/\\"/g, '"');
 
     try {
-      return parseDnsTxtRecord(recordName, rawRecord);
+      return {
+        ...parseDnsTxtRecord(recordName, rawRecord),
+        source: "dns-over-https",
+      };
     } catch {
       continue;
     }
   }
 
-  throw new Error(`No matching kyuix TXT record was found at ${recordName}.`);
+  throw new Error(`DNS-over-HTTPS returned TXT answers, but none matched ${recordName}.`);
+}
+
+export async function resolveProviderDnsRecord(
+  providerDomain: string,
+): Promise<ProviderDnsRecord> {
+  const recordName = getDnsRecordName(providerDomain);
+
+  try {
+    const records = await resolveTxt(recordName);
+
+    for (const recordChunks of records) {
+      const rawRecord = recordChunks.join("");
+
+      try {
+        return {
+          ...parseDnsTxtRecord(recordName, rawRecord),
+          source: "system-dns",
+        };
+      } catch {
+        continue;
+      }
+    }
+  } catch (error) {
+    const dnsError = error as NodeJS.ErrnoException;
+
+    if (dnsError.code !== "ENOTFOUND" && dnsError.code !== "ENODATA") {
+      throw error;
+    }
+  }
+
+  return resolveProviderDnsRecordViaHttps(recordName);
 }
 
 export function signResponsePayload(
