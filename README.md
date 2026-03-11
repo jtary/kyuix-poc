@@ -110,11 +110,24 @@ See [DNS setup](docs/dns-setup.md) for the exact record format.
 ## Default environment variables
 
 ```env
+COMPOSE_BUILD_CONTEXT=.
 CONSUMER_DOMAIN=consumer.localtest.me
 PROVIDER_DOMAIN=provider.example.com
 PROVIDER_PRIVATE_KEY_PKCS8_BASE64=
 DEMO_SUBJECT_DOB=1998-04-12
 ```
+
+## Dokploy note
+
+If Dokploy checks out the repository into a `code/` subdirectory but executes the
+compose file from the parent deployment directory, set:
+
+```env
+COMPOSE_BUILD_CONTEXT=./code
+```
+
+This makes the compose `build.context` point at the cloned repository instead of
+Dokploy's wrapper directory.
 
 ## Notes and limitations
 

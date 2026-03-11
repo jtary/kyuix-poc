@@ -1,7 +1,7 @@
 services:
   identity-consumer:
     build:
-      context: .
+      context: ${COMPOSE_BUILD_CONTEXT:-.}
       dockerfile: apps/identity-consumer/Dockerfile
     ports:
       - "3000:3000"
@@ -11,7 +11,7 @@ services:
 
   identity-provider:
     build:
-      context: .
+      context: ${COMPOSE_BUILD_CONTEXT:-.}
       dockerfile: apps/identity-provider/Dockerfile
     ports:
       - "3001:3001"
