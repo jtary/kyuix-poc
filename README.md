@@ -1,5 +1,7 @@
 # Kyuix Age Verification POC
 
+## Know Your Customer is X
+
 This repository contains a proof of concept for less-invasive personal-detail
 verification between two parties:
 
