@@ -4,7 +4,7 @@ services:
       context: ${COMPOSE_BUILD_CONTEXT:-.}
       dockerfile: apps/identity-consumer/Dockerfile
     ports:
-      - "3000:3000"
+      - "3100:3000"
     environment:
       CONSUMER_DOMAIN: ${CONSUMER_DOMAIN:-consumer.localtest.me}
     restart: unless-stopped
@@ -14,7 +14,7 @@ services:
       context: ${COMPOSE_BUILD_CONTEXT:-.}
       dockerfile: apps/identity-provider/Dockerfile
     ports:
-      - "3001:3001"
+      - "3101:3001"
     environment:
       APP_DOMAIN: ${PROVIDER_DOMAIN:-provider.example.com}
       PROVIDER_DOMAIN: ${PROVIDER_DOMAIN:-provider.example.com}
