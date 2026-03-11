@@ -1,0 +1,19 @@
+{
+  "name": "kyuix",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Age verification proof of concept with provider and consumer apps.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:consumer": "npm run dev --workspace identity-consumer",
+    "dev:provider": "npm run dev --workspace identity-provider",
+    "build": "npm run build --workspace identity-consumer && npm run build --workspace identity-provider",
+    "lint": "npm run lint --workspace identity-consumer && npm run lint --workspace identity-provider",
+    "generate:provider-keys": "node ./scripts/generate-provider-keypair.mjs",
+    "compose:up": "docker compose up --build",
+    "compose:down": "docker compose down"
+  }
+}
