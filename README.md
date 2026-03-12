@@ -10,6 +10,10 @@ verification between two parties:
 - `identity-provider`: evaluates the request against a local demo subject
   profile, shows the computed answer, and signs the response after consent.
 
+## Attestation flow
+
+![Kyuix attestation flow](./kyuix-attestation-flow.svg)
+
 ## Project layout
 
 - `apps/identity-consumer`: Next.js consumer app on port `3000`
